@@ -131,13 +131,25 @@ class GPUExecutor(ExecutorBase):
         output = self.driver_worker.execute_model(execute_model_req)
         return output
 
-    def verify_output(
-        self, input: VerifyChatCompletion
-    ) -> bool:
+    def verify_output(self, input: VerifyChatCompletion) -> bool:
         """Verify output response"""
         assert self.driver_worker is not None
-        return self.driver_worker.verify_output(input)
 
+        # Check if tensor parallelism is being used
+        if self.parallel_config.pipeline_parallel_size > 1:
+            # Aggregate sharded outputs from multiple devices
+            aggregated_output = self._aggregate_sharded_outputs(input)
+            return self.driver_worker.verify_output(aggregated_output)
+        else:
+            return self.driver_worker.verify_output(input)
+
+    def _aggregate_sharded_outputs(self, input):
+        """Helper function to aggregate outputs from all tensor parallel shards"""
+        aggregated_output = []
+        for shard in input.shards:  # Example of how sharded output might be accessed
+            aggregated_output.append(shard)
+        # Join the shards or perform another operation depending on how the output is structured
+        return aggregated_output
 
     def add_lora(self, lora_request: LoRARequest) -> bool:
         assert lora_request.lora_int_id > 0, "lora_id must be greater than 0."

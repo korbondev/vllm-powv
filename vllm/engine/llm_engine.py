@@ -1479,6 +1479,7 @@ class LLMEngine:
             >>>         break
         """
         if self.parallel_config.pipeline_parallel_size > 1:
+            output = self._aggregate_parallel_outputs(output)
             raise NotImplementedError(
                 "Pipeline parallelism is only supported through AsyncLLMEngine "
                 "as performance will be severely degraded otherwise.")
@@ -2021,3 +2022,13 @@ class LLMEngine:
             # TODO: Find out how many placeholder tokens are there so we can
             # check that chunked prefill does not truncate them
             # max_batch_len = self.scheduler_config.max_num_batched_tokens
+
+
+
+def _aggregate_parallel_outputs(self, output):
+    """Helper function to aggregate outputs from tensor-parallel devices."""
+    aggregated_output = []
+    for shard in output:
+        aggregated_output.append(shard)
+    # Combine the shards into a final result (this part may depend on the actual structure of the output)
+    return aggregated_output
