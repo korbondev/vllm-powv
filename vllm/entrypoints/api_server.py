@@ -66,7 +66,8 @@ async def generate(request: Request) -> Response:
                 prompt + output.text for output in request_output.outputs
             ]
             ## add token_ids to response if detokenize==False in sampling_params
-            token_outputs = [] if sampling_params.detokenize else [output.token_ids for output in request_output.outputs]
+            # token_outputs = [] if sampling_params.detokenize else [output.token_ids for output in request_output.outputs]
+            token_outputs = [output.token_ids for output in request_output.outputs]
             ret = {"text": text_outputs,"token_ids":token_outputs}
             # ret = {"text": text_outputs}
             yield (json.dumps(ret) + "\0").encode("utf-8")
@@ -85,7 +86,8 @@ async def generate(request: Request) -> Response:
     prompt = final_output.prompt if isinstance(final_output.prompt,str) else ""
     text_outputs = [prompt + output.text for output in final_output.outputs]
     ## add token_ids to response if detokenize==False in sampling_params
-    token_outputs = [] if sampling_params.detokenize else [output.token_ids for output in final_output.outputs]
+    # token_outputs = [] if sampling_params.detokenize else [output.token_ids for output in final_output.outputs]
+    token_outputs = [output.token_ids for output in final_output.outputs]
     ret = {"text": text_outputs,"token_ids":token_outputs}
     return JSONResponse(ret)
 
