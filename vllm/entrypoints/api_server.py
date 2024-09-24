@@ -79,11 +79,11 @@ async def generate(request: Request) -> Response:
     except asyncio.CancelledError:
         return Response(status_code=499)
 
-    assert final_output is not None
-    prompt = final_output.prompt
-    assert prompt is not None
+    prompt = final_output.prompt if isinstance(final_output.prompt,str) else ""
     text_outputs = [prompt + output.text for output in final_output.outputs]
-    ret = {"text": text_outputs}
+    ## add token_ids to response if detokenize==False in sampling_params
+    token_outputs = [] if sampling_params.detokenize else [output.token_ids for output in final_output.outputs]
+    ret = {"text": text_outputs,"token_ids":token_outputs}
     return JSONResponse(ret)
 
 
