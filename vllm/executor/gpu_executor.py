@@ -1,3 +1,4 @@
+from copy import deepcopy
 from typing import Any, Callable, Dict, List, Optional, Set, Tuple, Type, Union
 
 from vllm.entrypoints.openai.protocol import VerifyChatCompletion
@@ -131,23 +132,23 @@ class GPUExecutor(ExecutorBase):
         output = self.driver_worker.execute_model(execute_model_req)
         return output
 
-    def verify_output(self, input: VerifyChatCompletion) -> bool:
+    def verify_output(self, completion_input: VerifyChatCompletion) -> bool:
         """Verify output response"""
         assert self.driver_worker is not None
 
         # Check if tensor parallelism is being used
         if self.parallel_config.pipeline_parallel_size > 1:
             # Aggregate sharded outputs from multiple devices
-            aggregated_output = self._aggregate_sharded_outputs(input)
+            aggregated_output = self._aggregate_sharded_outputs(completion_input)
             return self.driver_worker.verify_output(aggregated_output)
         else:
-            return self.driver_worker.verify_output(input)
+            return self.driver_worker.verify_output(completion_input)
 
-    def _aggregate_sharded_outputs(self, input):
+    def _aggregate_sharded_outputs(self, completion_input):
         """Helper function to aggregate outputs from all tensor parallel shards"""
         aggregated_output = []
-        for shard in input.shards:  # Example of how sharded output might be accessed
-            aggregated_output.append(shard)
+        for shard in completion_input.shards:  # Example of how sharded output might be accessed
+            aggregated_output.append(deepcopy(shard))
         # Join the shards or perform another operation depending on how the output is structured
         return aggregated_output
 

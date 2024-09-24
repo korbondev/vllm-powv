@@ -1,3 +1,4 @@
+from copy import deepcopy
 import functools
 import time
 from collections import deque
@@ -2025,10 +2026,10 @@ class LLMEngine:
 
 
 
-def _aggregate_parallel_outputs(self, output):
-    """Helper function to aggregate outputs from tensor-parallel devices."""
-    aggregated_output = []
-    for shard in output:
-        aggregated_output.append(shard)
-    # Combine the shards into a final result (this part may depend on the actual structure of the output)
-    return aggregated_output
+    def _aggregate_parallel_outputs(self, output):
+        """Helper function to aggregate outputs from tensor-parallel devices."""
+        aggregated_output = []
+        for shard in output:
+            aggregated_output.append(deepcopy(shard))
+        # Combine the shards into a final result (this part may depend on the actual structure of the output)
+        return aggregated_output
