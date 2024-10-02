@@ -12,7 +12,8 @@ from typing_extensions import Annotated, Required, TypedDict
 from vllm.entrypoints.chat_utils import ChatCompletionMessageParam
 from vllm.entrypoints.openai.logits_processors import get_logits_processors
 from vllm.pooling_params import PoolingParams
-from vllm.sampling_params import LogitsProcessor, SamplingParams
+from vllm.sampling_params import (LogitsProcessor, RequestOutputKind,
+                                  SamplingParams)
 from vllm.sequence import Logprob
 from vllm.transformers_utils.tokenizer import AnyTokenizer
 from vllm.utils import random_uuid
@@ -104,6 +105,11 @@ class UsageInfo(OpenAIBaseModel):
     prompt_tokens: int = 0
     total_tokens: int = 0
     completion_tokens: Optional[int] = 0
+
+
+class RequestResponseMetadata(BaseModel):
+    request_id: str
+    final_usage_info: Optional[UsageInfo] = None
 
 
 class JsonSchemaResponseFormat(OpenAIBaseModel):
@@ -316,6 +322,8 @@ class ChatCompletionRequest(OpenAIBaseModel):
             length_penalty=self.length_penalty,
             logits_processors=logits_processors,
             truncate_prompt_tokens=self.truncate_prompt_tokens,
+            output_kind=RequestOutputKind.DELTA if self.stream \
+                else RequestOutputKind.FINAL_ONLY,
         )
 
     @model_validator(mode="before")
@@ -378,7 +386,7 @@ class ChatCompletionRequest(OpenAIBaseModel):
 
         # if "tool_choice" is not specified but tools are provided,
         # default to "auto" tool_choice
-        if "tool_choice" not in data and "tools" in data:
+        if "tool_choice" not in data and data.get("tools"):
             data["tool_choice"] = "auto"
 
         # if "tool_choice" is specified -- validation
@@ -559,6 +567,8 @@ class CompletionRequest(OpenAIBaseModel):
             length_penalty=self.length_penalty,
             logits_processors=logits_processors,
             truncate_prompt_tokens=self.truncate_prompt_tokens,
+            output_kind=RequestOutputKind.DELTA if self.stream \
+                else RequestOutputKind.FINAL_ONLY,
         )
 
     @model_validator(mode="before")
@@ -715,13 +725,6 @@ class DeltaToolCall(OpenAIBaseModel):
     function: Optional[DeltaFunctionCall] = None
 
 
-# the initial delta that gets sent once a new tool call is started;
-class InitialDeltaToolCall(DeltaToolCall):
-    id: str = Field(default_factory=lambda: f"chatcmpl-tool-{random_uuid()}")
-    type: Literal["function"] = "function"
-    index: int
-
-
 class ExtractedToolCallInformation(BaseModel):
     # indicate if tools were called
     tools_called: bool
@@ -865,27 +868,6 @@ class TokenizeChatRequest(OpenAIBaseModel):
     add_generation_prompt: bool = Field(default=True)
     add_special_tokens: bool = Field(default=False)
 
-class VerifyChatCompletion(OpenAIBaseModel):
-    model: str
-    input_tokens: List[int]
-    response_tokens: List[int]
-    powv: Optional[int] = None
-
-class VerifyChatCompletionResponse(OpenAIBaseModel):
-    model: str
-    messages: List[ChatCompletionMessageParam]
-    response: List[Tuple[str, int]]
-    powv: int
-    version: str
-
-class VerifyCompletionResponse(OpenAIBaseModel):
-    model: str
-    prompt: str
-    response: List[Tuple[str, int]]
-    powv: int
-    version: str
-
-
 TokenizeRequest = Union[TokenizeCompletionRequest, TokenizeChatRequest]
 
 
@@ -902,3 +884,13 @@ class DetokenizeRequest(OpenAIBaseModel):
 
 class DetokenizeResponse(OpenAIBaseModel):
     prompt: str
+
+
+class LoadLoraAdapterRequest(BaseModel):
+    lora_name: str
+    lora_path: str
+
+
+class UnloadLoraAdapterRequest(BaseModel):
+    lora_name: str
+    lora_int_id: Optional[int] = Field(default=None)
