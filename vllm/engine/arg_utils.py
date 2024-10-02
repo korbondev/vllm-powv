@@ -6,7 +6,7 @@ from typing import (TYPE_CHECKING, Any, Dict, List, Mapping, Optional, Tuple,
                     Type, Union)
 
 import torch
-
+torch.backends.cudnn.deterministic = True
 import vllm.envs as envs
 from vllm.config import (CacheConfig, ConfigFormat, DecodingConfig,
                          DeviceConfig, EngineConfig, LoadConfig, LoadFormat,

@@ -115,8 +115,6 @@ def _add_query_options(
 
 
 def main():
-    import torch
-    torch.backends.cudnn.deterministic = True
     parser = FlexibleArgumentParser(description="vLLM CLI")
     subparsers = parser.add_subparsers(required=True)
 
