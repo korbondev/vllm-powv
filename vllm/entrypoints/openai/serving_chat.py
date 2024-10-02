@@ -7,6 +7,7 @@ from typing import Sequence as GenericSequence
 from typing import Union
 
 from fastapi import Request
+import torch
 
 from vllm.config import ModelConfig
 from vllm.engine.protocol import EngineClient
@@ -231,7 +232,7 @@ class OpenAIServingChat(OpenAIServing):
             if (not is_tracing_enabled and raw_request
                     and contains_trace_headers(raw_request.headers)):
                 log_tracing_disabled_warning()
-
+            torch.cuda.synchronize()
             result_generator = self.engine_client.generate(
                 engine_inputs,
                 sampling_params,
@@ -250,11 +251,13 @@ class OpenAIServingChat(OpenAIServing):
 
         # Streaming response
         if request.stream:
+            torch.cuda.synchronize()
             return self.chat_completion_stream_generator(
                 request, result_generator, request_id, conversation, tokenizer,
                 request_metadata)
 
         try:
+            torch.cuda.synchronize()
             return await self.chat_completion_full_generator(
                 request, result_generator, request_id, conversation, tokenizer,
                 request_metadata)
