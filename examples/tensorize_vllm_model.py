@@ -216,7 +216,7 @@ if __name__ == '__main__':
         input_dir = args.serialized_directory.rstrip('/')
         suffix = args.suffix if args.suffix else uuid.uuid4().hex
         base_path = f"{input_dir}/vllm/{model_ref}/{suffix}"
-        if engine_args.tensor_parallel_size > 1:
+        if engine_args.tensor_parallel_size > 1 and False:
             model_path = f"{base_path}/model-rank-%03d.tensors"
         else:
             model_path = f"{base_path}/model.tensors"
