@@ -179,7 +179,7 @@ class OpenAIServingCompletion(OpenAIServing):
                     trace_headers=trace_headers,
                 )
                 
-                generator = (g for g in generator if (await set_seed_for_tensor_parallel(request_seed)) is None)
+                # generator = (g for g in generator if (await set_seed_for_tensor_parallel(request_seed)) is None)
                 generators.append(generator)
         except ValueError as e:
             # TODO: Use a vllm-specific Validation Error
