@@ -167,8 +167,11 @@ class OpenAIServingCompletion(OpenAIServing):
                         raw_request.headers):
                     log_tracing_disabled_warning()
 
+                await initialize_tensor_parallel_workers(request_seed)
+
                 generator = self.engine_client.generate(
                     {"prompt_token_ids": prompt_inputs["prompt_token_ids"]},
+                    sampling_params,
                     sampling_params,
                     request_id_item,
                     lora_request=lora_request,
