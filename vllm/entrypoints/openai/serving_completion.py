@@ -49,7 +49,7 @@ import numpy as np
 async def set_seed_for_tensor_parallel(seed: int):
     # Set the seed across all tensor parallel ranks
     torch.manual_seed(seed)
-    random.seed(seed)
+    # random.seed(seed)
     np.random.seed(seed)
     if torch.cuda.is_available():
         torch.cuda.manual_seed_all(seed)
@@ -171,7 +171,6 @@ class OpenAIServingCompletion(OpenAIServing):
 
                 generator = self.engine_client.generate(
                     {"prompt_token_ids": prompt_inputs["prompt_token_ids"]},
-                    sampling_params,
                     sampling_params,
                     request_id_item,
                     lora_request=lora_request,
