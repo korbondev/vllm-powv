@@ -42,6 +42,28 @@ TypeCreateLogProbsFn = Callable[
     [TypeTokenIDs, TypeTopLogProbs, Optional[int], int], CompletionLogProbs]
 
 
+import torch
+import random
+import numpy as np
+
+async def set_seed_for_tensor_parallel(seed: int):
+    # Set the seed across all tensor parallel ranks
+    torch.manual_seed(seed)
+    random.seed(seed)
+    np.random.seed(seed)
+    if torch.cuda.is_available():
+        torch.cuda.manual_seed_all(seed)
+
+
+
+async def initialize_tensor_parallel_workers(seed: int):
+    if torch.distributed.is_initialized():
+        # Ensure every worker has the same seed for deterministic behavior
+        await set_seed_for_tensor_parallel(seed)
+
+
+
+
 class OpenAIServingCompletion(OpenAIServing):
 
     def __init__(
@@ -245,6 +267,8 @@ class OpenAIServingCompletion(OpenAIServing):
         num_prompt_tokens = [0] * num_prompts
 
         try:
+            request_seed = getattr(request, "seed", 42)  # Default to 42 if no seed is provided
+            await initialize_tensor_parallel_workers(request_seed)
             async for prompt_idx, res in result_generator:
                 prompt_token_ids = res.prompt_token_ids
                 prompt_logprobs = res.prompt_logprobs
@@ -344,6 +368,7 @@ class OpenAIServingCompletion(OpenAIServing):
 
                     response_json = chunk.model_dump_json(exclude_unset=False)
                     yield f"data: {response_json}\n\n"
+                    await set_seed_for_tensor_parallel(request_seed)
 
             if (request.stream_options
                     and request.stream_options.include_usage):
