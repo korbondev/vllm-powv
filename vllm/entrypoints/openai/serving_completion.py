@@ -172,7 +172,6 @@ class OpenAIServingCompletion(OpenAIServing):
                 generator = self.engine_client.generate(
                     {"prompt_token_ids": prompt_inputs["prompt_token_ids"]},
                     sampling_params,
-                    sampling_params,
                     request_id_item,
                     lora_request=lora_request,
                     prompt_adapter_request=prompt_adapter_request,
