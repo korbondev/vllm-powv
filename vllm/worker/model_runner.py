@@ -1622,8 +1622,8 @@ class ModelRunner(GPUModelRunnerBase[ModelInputForGPUWithSamplingMetadata]):
         } if self.has_seqlen_agnostic else {}
         if (self.observability_config is not None
                 and self.observability_config.collect_model_forward_time):
-            model_forward_start = torch.cuda.Event(enable_timing=True)
-            model_forward_end = torch.cuda.Event(enable_timing=True)
+            model_forward_start = torch.cuda.Event(enable_timing=True,interprocess=True)
+            model_forward_end = torch.cuda.Event(enable_timing=True,interprocess=True)
             model_forward_start.record()
 
         hidden_or_intermediate_states = model_executable(

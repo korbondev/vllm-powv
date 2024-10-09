@@ -146,7 +146,7 @@ class StatefulModelInput(BroadcastableModelInput):
     is_first_multi_step: bool = False
     # ping-pong data structures for multi-step to wait on the previous step
     step_cuda_events: List[torch.cuda.Event] = field(
-        default_factory=lambda: [torch.cuda.Event(blocking=True)] * 2)
+        default_factory=lambda: [torch.cuda.Event(blocking=True,interprocess=True)] * 2)
     num_seqs: int = -1
     num_queries: int = -1
 
@@ -186,7 +186,7 @@ class StatefulModelInput(BroadcastableModelInput):
         # support any attn backends that may be supported in the future. ie
         # Flashinfer would want two DecodeWrappers to overlap the CPU and GPU.
         self.step_cuda_events[self.current_step & 1] = \
-            torch.cuda.Event(blocking=True)
+            torch.cuda.Event(blocking=True,interprocess=True)
         self.step_cuda_events[self.current_step & 1].record(current_stream)
 
     def wait_previous_step(self):
@@ -419,7 +419,7 @@ class MultiStepModelRunner(GPUModelRunnerBase[StatefulModelInput]):
 
             # event for the pythonization so that we only pythonize if the
             # tensors are ready. May be able to be combined with the step event
-            output_ready_event = torch.cuda.Event()
+            output_ready_event = torch.cuda.Event(interprocess=True,interprocess=True)
             output_ready_event.record(current_stream)
             if self.parallel_config.pipeline_parallel_size > 1:
                 output[0].sampled_token_ids_cpu = output[

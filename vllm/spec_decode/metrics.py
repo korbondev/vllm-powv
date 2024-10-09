@@ -126,7 +126,7 @@ class AsyncMetricsCollector:
             self._aggregate_num_draft_tokens = (
                 self.spec_decode_sampler.num_draft_tokens)
 
-        aggregate_metrics_ready = torch.cuda.Event()
+        aggregate_metrics_ready = torch.cuda.Event(interprocess=True)
         aggregate_metrics_ready.record(self._copy_stream)
 
         return aggregate_metrics_ready
