@@ -142,7 +142,7 @@ class OpenAIServingCompletion(OpenAIServing):
                     truncate_prompt_tokens=request.truncate_prompt_tokens,
                     add_special_tokens=request.add_special_tokens,
                 ))
-
+            request_seed = getattr(request, "seed", 42)  # Default to 42 if no seed is provided
             for i, prompt_inputs in enumerate(prompts):
                 sampling_params = request.to_sampling_params(
                     tokenizer,
@@ -175,7 +175,8 @@ class OpenAIServingCompletion(OpenAIServing):
                     prompt_adapter_request=prompt_adapter_request,
                     trace_headers=trace_headers,
                 )
-
+                
+                generator = (g for g in generator if (await set_seed_for_tensor_parallel(request_seed)) is None)
                 generators.append(generator)
         except ValueError as e:
             # TODO: Use a vllm-specific Validation Error
